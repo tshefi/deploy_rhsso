@@ -1,0 +1,72 @@
+---
+#create realm
+apiVersion: keycloak.org/v1alpha1
+kind: KeycloakRealm
+metadata:
+  name: REALMNAME
+  namespace: NAMESPACE
+  labels:
+    app: sso
+spec:
+  instanceSelector:
+    matchLabels:
+      app: sso
+  realm:
+    id: 
+    realm: REALMNAME
+    enabled: true
+
+---
+#Create Client
+#To generate redirecit url: $oc cluster-info | grep -o 'https://[^ ]*' | awk '{print $1}' | sed 's/api/oauth-openshift.apps/; s/:6443/\/*/'
+
+apiVersion: keycloak.org/v1alpha1
+kind: KeycloakClient
+metadata:
+  name: REALMCLIENT 
+  labels:
+    app: sso
+  namespace: NAMESPACE
+spec:
+  realmSelector:
+     matchLabels:
+      app: sso 
+  client:
+    clientId: REALMCLIENT
+    enabled: true
+    clientAuthenticatorType: "client-secret"
+    secret: CLIENTSECRET
+    redirectUris: [
+       OCPOATHURL
+    ]
+    standardFlowEnabled: true
+    directAccessGrantsEnabled: true
+    protocol: "openid-connect"
+    attributes: {
+      saml.encrypt: "false",
+      login_theme: "rh-sso"
+    } 
+
+---
+#Create user
+kind: KeycloakUser
+apiVersion: keycloak.org/v1alpha1
+metadata:
+  name: OCPUSERNAME
+  labels:
+    app: sso
+  namespace: NAMESPACE
+spec:
+  user:
+    username: OCPUSERNAME
+    firstName: Test
+    lastName: User1
+    email: 
+    enabled: true
+    emailVerified: false
+    credentials:
+      - type: password
+        value: OCPUSERPASSWORD
+  realmSelector:
+    matchLabels:
+      app: sso

@@ -1,0 +1,18 @@
+---
+#Start a keycloak pod
+apiVersion: keycloak.org/v1alpha1
+kind: Keycloak
+metadata:
+  name: KEYCLOAK
+  labels:
+    app: sso
+  namespace: NAMESPACE
+spec:
+  externalAccess:
+    enabled: true
+  keycloakDeploymentSpec:
+    imagePullPolicy: Always
+  postgresDeploymentSpec:
+    imagePullPolicy: Always
+  instances: 1
+
