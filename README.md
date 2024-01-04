@@ -19,13 +19,5 @@ Again we can't reuse or create OCP based templates which use parameters in yaml 
 To using with default just download and execute(chmod +x) ./deploy_rh_sso.sh
 you'll get an almost ready to use terraform.tfvars file, just fill in your token and terraform apply. 
 
-If you wish to edit any of the 7 defaults, you must populate them till including the last one you wish to change.
-NAMESPACE=${1:-idpdemo}
-KEYCLOAK=${2:-keycloak}
-REALMNAME=${3:-realm}
-REALMCLIENT=${4:-client}
-CLIENTSECRET=${5:-\"$(openssl rand -base64 14)\"}
-OCPUSERNAME=${6:-testuser1}
-OCPUSERPASSWORD=${7:-\"$(openssl rand -base64 14)\"}
-
+If you wish to edit any of the 7 defaults, populate them including the last one you wish to change.
 ./deploy_rh_sso.sh idpdemo3 keycloak4 client1 
