@@ -13,4 +13,19 @@ We can't use OCP templates as these are available or can be added assuming the o
 
 We can't use a helm charts to deploy RH SSO, as current RH doesn't support it.
 
-Ended up bashing my way around the timing issue, also helped me bypass the parameter issues I hit. Again we can't reuse or create OCP based templates which use parameters in yaml files as the operator isn't installed just yet.
+Ended up bashing my way around the timing issue, also helped with parameter processing. 
+Again we can't reuse or create OCP based templates which use parameters in yaml files as the operator isn't installed just yet.
+
+To using with default just download and execute(chmod +x) ./deploy_rh_sso.sh
+you'll get an almost ready to use terraform.tfvars file, just fill in your token and terraform apply. 
+
+If you wish to edit any of the 7 defaults, you must populate them till including the last one you wish to change.
+NAMESPACE=${1:-idpdemo}
+KEYCLOAK=${2:-keycloak}
+REALMNAME=${3:-realm}
+REALMCLIENT=${4:-client}
+CLIENTSECRET=${5:-\"$(openssl rand -base64 14)\"}
+OCPUSERNAME=${6:-testuser1}
+OCPUSERPASSWORD=${7:-\"$(openssl rand -base64 14)\"}
+
+./deploy_rh_sso.sh idpdemo3 keycloak4 client1 
