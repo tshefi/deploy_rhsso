@@ -47,7 +47,7 @@ echo "Running first yaml."
 oc apply -f  CreateNamespace_InstallRHSSO.yaml -n $NAMESPACE
 
 echo "waiting for operator deployment to complete, ~1m."
-sleep 15
+sleep 20
 oc wait --for=condition=Available deployment/rhsso-operator -n $NAMESPACE --timeout=300s
 echo "RH sso operator is now ready, creating keycloak pod."
 oc apply -f CreateKeycloakPod.yaml -n $NAMESPACE
