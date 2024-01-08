@@ -26,54 +26,87 @@ echo "Please login to OCP as an admin user and try again."
 exit 0
 fi
 
+if [ -e CreateKeycloakPod.yaml ] && [ -e CreateNamespace_InstallRHSSO.yaml ] && [ -e CreateRealm_RealmClient_RealmUser.yaml ]; then
+   echo "Yamls already exist."
+else 
+   echo "Getting needed yamls"
+    curl --remote-name --remote-name-all k4L  https://raw.githubusercontent.com/tshefi/deploy_rhsso/main/{CreateKeycloakPod.yaml,CreateNamespace_InstallRHSSO.yaml,CreateRealm_RealmClient_RealmUser.yaml}
 
-#Bring yamls with curl
-echo "Getting needed yamls"
-curl --remote-name-all k4L  https://raw.githubusercontent.com/tshefi/deploy_rhsso/main/{CreateKeycloakPod.yaml,CreateNamespace_InstallRHSSO.yaml,CreateRealm_RealmClient_RealmUser.yaml}
-
-#Populate variables
-echo "Substituting paramaters on yaml files.."
-sed -i "s|NAMESPACE|$NAMESPACE|g;       \
-        s|KEYCLOAK|$KEYCLOAK|g;         \
-        s|REALMNAME|$REALMNAME|g;       \
-        s|REALMCLIENT|$REALMCLIENT|g;   \
-        s|CLIENTSECRET|$CLIENTSECRET|g; \
-        s|OCPOATHURL|$OCPOATHURL|g;     \
-        s|OCPUSERNAME|$OCPUSERNAME|g;   \
-        s|OCPUSERPASSWORD|$OCPUSERPASSWORD|g; \
-        s/\x1B\[[0-9;]*[JKmsu]//g  " *.yaml
+   #Populate variables
+   echo "Substituting paramaters on yaml files.."
+   sed -i "s|NAMESPACE|$NAMESPACE|g;       \
+           s|KEYCLOAK|$KEYCLOAK|g;         \
+           s|REALMNAME|$REALMNAME|g;       \
+           s|REALMCLIENT|$REALMCLIENT|g;   \
+           s|CLIENTSECRET|$CLIENTSECRET|g; \
+           s|OCPOATHURL|$OCPOATHURL|g;     \
+           s|OCPUSERNAME|$OCPUSERNAME|g;   \
+           s|OCPUSERPASSWORD|$OCPUSERPASSWORD|g; \
+           s/\x1B\[[0-9;]*[JKmsu]//g  " *.yaml
+fi 
 
 echo "Running first yaml."
 oc apply -f  CreateNamespace_InstallRHSSO.yaml -n $NAMESPACE
 
-echo "waiting for operator deployment to complete, ~1m."
-sleep 20
+echo "  waiting for operator deployment to complete, ~1m."
+
+
+end=$((SECONDS+20))
+i=1
+sp="/-\|"
+echo -n ' '
+while [ $SECONDS -lt $end ]; do
+ printf "\b${sp:i++%${#sp}:1}"
+ sleep 1
+done
+echo ""
+
 oc wait --for=condition=Available deployment/rhsso-operator -n $NAMESPACE --timeout=300s
-echo "RH sso operator is now ready, creating keycloak pod."
+echo "  RH sso operator is now ready, creating keycloak pod."
 oc apply -f CreateKeycloakPod.yaml -n $NAMESPACE
 
-echo "Waiting for keycloak-0 pod ready state, ~1m."
-sleep 65
+echo "  Waiting for keycloak-0 pod to reach ready state ~1m."
+
+end=$((SECONDS+65))
+i=1
+sp="/-\|"
+echo -n ' '
+while [ $SECONDS -lt $end ]; do
+ printf "\b${sp:i++%${#sp}:1}"
+ sleep 1
+done
+echo ""
+
 oc wait --for=condition=Ready=true pod/keycloak-0 -n $NAMESPACE --timeout=180s
-echo "Creating realm, realm client and realm user."
+echo "  Creating realm, realm client and realm user."
 oc apply -f CreateRealm_RealmClient_RealmUser.yaml -n $NAMESPACE
 
+end=$((SECONDS+10))
+i=1
+sp="/-\|"
+echo -n ' '
+while [ $SECONDS -lt $end ]; do
+ printf "\b${sp:i++%${#sp}:1}"
+ sleep 1
+done
+echo "*******"
 
 #Output TF stuff
-echo "The OCP username is:"$OCPUSERNAME
-echo "Userpassword is:"$OCPUSERPASSWORD
-echo "To delete project $NAMESPACE delete these manually: user,client,realm, else project will remain forever in terminating state, bug??.\n"
+echo "The OCP username is: "$OCPUSERNAME
+echo "Userpassword is: "$OCPUSERPASSWORD
+echo "To delete project: $NAMESPACE delete these manually: user,client,realm, else project will remain forever in terminating state, bug?"
+echo "*******"
 
 echo "Just add your token on terraform.tfvars"
-echo "token = \"add yours here..\"" | tee terraform.tfvars
-echo url = $(rosa whoami | grep API | awk '{print $3}') | tee -a terraform.tfvars
-echo cluster_id = $CLUSTERID | tee -a terraform.tfvars
-echo openid_client_id = $REALMCLIENT | tee -a terraform.tfvars
-echo openid_client_secret = $CLIENTSECRET | tee -a terraform.tfvars
-echo "openid_issuer = \"https://$(oc get route keycloak --template='{{ .spec.host }}' -n "$NAMESPACE")/auth/realms/$REALMNAME\"" | tee -a terraform.tfvars
+echo "token = \"add yours here..\"" >> terraform.tfvars
+echo url = \"$(rosa whoami | grep API | awk '{print $3}')\" >> terraform.tfvars
+echo cluster_id = \"$CLUSTERID\" >> terraform.tfvars
+echo openid_client_id = \"$REALMCLIENT\" >> terraform.tfvars
+echo openid_client_secret = $CLIENTSECRET >> terraform.tfvars
+echo "openid_issuer = \"https://$(oc get route keycloak --template='{{ .spec.host }}' -n "$NAMESPACE")/auth/realms/$REALMNAME\"" >> terraform.tfvars
 echo openid_claims = "{
-       email             = ["email"]
-       name              = ["name"]
-       preferredUsername = ["preferred_username"]
-     }" | tee -a terraform.tfvars
-echo openid_ca = \"$(oc get secret $CLUSTERNAME-primary-cert-bundle-secret -n openshift-ingress -ojsonpath='{.data.tls\.crt}' | base64 --decode | awk 'NF {sub(/\r/, ""); printf "%s\\n",$0;}')\" | tee -a terraform.tfvars
+       email             = [\"email\"]
+       name              = [\"name\"]
+       preferredUsername = [\"preferred_username\"]
+     }" >> terraform.tfvars
+echo openid_ca = \"$(oc get secret $CLUSTERNAME-primary-cert-bundle-secret -n openshift-ingress -ojsonpath='{.data.tls\.crt}' | base64 --decode | awk 'NF {sub(/\r/, ""); printf "%s\\n",$0;}')\" >> terraform.tfvars
