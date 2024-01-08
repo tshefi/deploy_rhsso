@@ -51,7 +51,7 @@ oc apply -f  CreateNamespace_InstallRHSSO.yaml -n $NAMESPACE
 echo "  waiting for operator deployment to complete, ~1m."
 
 
-end=$((SECONDS+20))
+end=$((SECONDS+25))
 i=1
 sp="/-\|"
 echo -n ' '
