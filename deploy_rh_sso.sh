@@ -30,7 +30,7 @@ if [ -e CreateKeycloakPod.yaml ] && [ -e CreateNamespace_InstallRHSSO.yaml ] && 
    echo "Yamls already exist."
 else 
    echo "Getting needed yamls"
-    curl --remote-name --remote-name-all k4L  https://raw.githubusercontent.com/tshefi/deploy_rhsso/main/{CreateKeycloakPod.yaml,CreateNamespace_InstallRHSSO.yaml,CreateRealm_RealmClient_RealmUser.yaml}
+    curl --remote-name --remote-name-all -sk4L  https://raw.githubusercontent.com/tshefi/deploy_rhsso/main/{CreateKeycloakPod.yaml,CreateNamespace_InstallRHSSO.yaml,CreateRealm_RealmClient_RealmUser.yaml}
 
    #Populate variables
    echo "Substituting paramaters on yaml files.."
@@ -51,7 +51,7 @@ oc apply -f  CreateNamespace_InstallRHSSO.yaml -n $NAMESPACE
 echo "  waiting for operator deployment to complete, ~1m."
 
 
-end=$((SECONDS+25))
+end=$((SECONDS+40))
 i=1
 sp="/-\|"
 echo -n ' '
