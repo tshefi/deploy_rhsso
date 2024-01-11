@@ -18,8 +18,6 @@ spec:
 
 ---
 #Create Client
-#To generate redirecit url: $oc cluster-info | grep -o 'https://[^ ]*' | awk '{print $1}' | sed 's/api/oauth-openshift.apps/; s/:6443/\/*/'
-
 apiVersion: keycloak.org/v1alpha1
 kind: KeycloakClient
 metadata:
